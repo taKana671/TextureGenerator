@@ -1,14 +1,17 @@
-import pathlib
 import random
-from datetime import datetime
 
 import numpy as np
-import cv2
 
-from pynoise.simplex import Simplex
-from pynoise.fractal import Fractal
 from .cloud import Cloud, SkyColor
 from .utils.noise_processing import adjust_noise_amount
+from output_image import make_dir, output
+
+try:
+    from cynoise.simplex import SimplexNoise
+    from cynoise.fBm import Fractal
+except ImportError:
+    from pynoise.simplex import SimplexNoise
+    from pynoise.fBm import Fractal
 
 
 class CubeMap:
@@ -24,6 +27,12 @@ class CubeMap:
         self.half_size = int(size / 2)
         self.width = size * 6
         self.height = size
+
+    @classmethod
+    def from_sfractal(cls, size=256, gain=0.5, lacunarity=2.011, octaves=4):
+        simplex = SimplexNoise()
+        fract = Fractal(simplex.snoise3, gain, lacunarity, octaves)
+        return cls(fract.fractal, size)
 
     def generate_cubemap(self):
         """Generate cubemap like below.
@@ -78,17 +87,6 @@ class CubeMap:
         arr = np.clip(arr * 255, a_min=0, a_max=255).astype(np.uint8)
         return arr
 
-    @classmethod
-    def from_sfractal(cls, size=256, weight=0.5, lacunarity=2.011, octaves=4):
-        simplex = Simplex()
-        fract = Fractal(simplex.snoise3, weight, lacunarity, octaves)
-        return cls(fract.fractal, size)
-
-    @classmethod
-    def from_snoise(cls, size=256):
-        simplex = Simplex()
-        return cls(simplex.snoise3, size)
-
     def create_skybox_images(self, intensity=1, sky_color=SkyColor.SKYBLUE):
         """Create skybox images.
             Args:
@@ -96,14 +94,13 @@ class CubeMap:
                 sky_color(SkyColor): background color
         """
         img = self.generate_cubemap()
+        # output(img, 'org')
         img = adjust_noise_amount(img)
+        # output(img.astype(np.uint8), 'adjust')
         self.generate_images(img, sky_color, intensity)
 
     def generate_images(self, img, sky_color, intensity=1):
-        now = datetime.now()
-        path = pathlib.Path(f'cubemap_{now.strftime("%Y%m%d%H%M%S")}')
-        path.mkdir()
-
+        parent = make_dir('cubemap')
         s_color, e_color = sky_color.rgb_to_bgr()
 
         for i in range(6):
@@ -113,38 +110,38 @@ class CubeMap:
 
             match i:
                 case 0:
-                    file_name = 'img_2.png'  # 'front.png'
+                    stem = 'img_2'  # 'front.png'
                     bg_img = cloud.create_background(s_color, e_color)
                     cloud_img = cloud.generate_cloud(bg_img)
 
                 case 1:
-                    file_name = 'img_0.png'  # 'right.png'
+                    stem = 'img_0'  # 'right.png'
                     bg_img = cloud.create_background(s_color, e_color)
                     cloud_img = cloud.generate_cloud(bg_img)
                     cloud_img = np.rot90(cloud_img)
 
                 case 2:
-                    file_name = 'img_3.png'  # 'back.png'
+                    stem = 'img_3'  # 'back.png'
                     bg_img = cloud.create_background(s_color, e_color)
                     cloud_img = cloud.generate_cloud(bg_img)
                     cloud_img = np.rot90(cloud_img, 2)
 
                 case 3:
-                    file_name = 'img_1.png'  # 'left.png'
+                    stem = 'img_1'  # 'left.png'
                     bg_img = cloud.create_background(s_color, e_color)
                     cloud_img = cloud.generate_cloud(bg_img)
                     cloud_img = np.rot90(cloud_img, 3)
 
                 case 4:
-                    file_name = 'img_4.png'  # 'top.png'
+                    stem = 'img_4'  # 'top.png'
                     bg_img = cloud.create_background(s_color)
                     cloud_img = cloud.generate_cloud(bg_img)
 
                 case 5:
-                    file_name = 'img_5.png'  # 'bottom.png'
+                    stem = 'img_5'  # 'bottom.png'
                     bg_img = cloud.create_background(e_color)
                     cloud_img = cloud.generate_cloud(bg_img)
                     cloud_img = np.rot90(cloud_img, 2)
 
             cloud_img = cloud_img.astype(np.uint8)
-            cv2.imwrite(path / file_name, cloud_img)
+            output(cloud_img, stem, parent, with_suffix=False)

@@ -1,14 +1,21 @@
 import copy
-from datetime import datetime
 from enum import Enum
 
 import cv2
 import numpy as np
 
-# from NoiseTexture.pynoise.perlin import Perlin
-from cynoise.fBm import FractionalBrownianMotion as fbm
+from output_image import output
 from .utils.noise_processing import round_arr, adjust_noise_amount
 from .utils.color_gradient import get_gradient_3d
+
+try:
+    from cynoise.value import ValueNoise
+    from cynoise.perlin import PerlinNoise
+    from cynoise.simplex import SimplexNoise
+except ImportError:
+    from pynoise.value import ValueNoise
+    from pynoise.perlin import PerlinNoise
+    from pynoise.simplex import SimplexNoise
 
 
 class SkyColor(Enum):
@@ -44,20 +51,20 @@ class Cloud:
                 intensity(int): cloud color intensity; minimum = 1
                 sky_color(SkyColor): background color
                 bbox(list): 4 points of a rectangle in the noise image;
-                            must be the format of [[ax, ay], [bx, by], [cx, cy], [dx, dy]].;
-                            ax, ay, bx, by, cx, cy, dx, dy: int
+                            must be the format of [[int, int], [int, int], [int, int], [int, int]].
         """
+        # output(self.img.astype(np.uint8), 'org')
         self.img = adjust_noise_amount(self._arr)
+        # output(self.img.astype(np.uint8), 'adjust')
         src_pts = self.get_src_pts(bbox)
         self.img = self.perspective_transform(src_pts)
+        # output(self.img.astype(np.uint8), 'pers')
 
         bg_img = self.create_background(*sky_color.rgb_to_bgr())
         cloud_img = self.generate_cloud(bg_img, intensity)
         cloud_img = cloud_img.astype(np.uint8)
 
-        now = datetime.now()
-        file_name = f'cloud_{now.strftime("%Y%m%d%H%M%S")}.png'
-        cv2.imwrite(file_name, cloud_img)
+        output(cloud_img, 'cloud')
 
     def get_src_pts(self, bbox):
         w = self.width - 1
@@ -83,9 +90,7 @@ class Cloud:
         """Perspective transformation
             Args:
                 src_pts (numpy.ndarray or list): 4 points of a rectangle in the noise image;
-                            must be [[ax, ay], [bx, by], [cx, cy], [dx, dy]].;
-                            ax, ay, bx, by, cx, cy, dx, dy: int
-
+                            must be [[ax, ay], [bx, by], [cx, cy], [dx, dy]].
                             self.img              transformed
                            ________________     a ________________d
                           |     d_____ c   |     |                |
@@ -129,16 +134,34 @@ class Cloud:
 
         return bg_img
 
+    def _convert(self, arr):
+        arr = np.clip(arr * 255, a_min=0, a_max=255).astype(np.uint8)
+        arr = np.stack([arr] * 3, axis=2)
+        return arr
+
     @classmethod
     def from_file(cls, file_path):
         arr = cv2.imread(file_path)
         return cls(arr)
 
     @classmethod
-    def from_fbm(cls, grid=8, size=256):
-        maker = fbm(grid=grid, size=size)
-        arr = maker.noise2()
+    def from_vfractal(cls, size=256, grid=4, t=None, gain=0.5, lacunarity=2.01, octaves=4):
+        vnoise = ValueNoise()
+        arr = vnoise.fractal2(size, grid, t, gain, lacunarity, octaves)
+        arr = cls._convert(cls, arr)
+        return cls(arr)
 
-        arr = np.clip(arr * 255, a_min=0, a_max=255).astype(np.uint8)
-        arr = np.stack([arr] * 3, axis=2)
+    @classmethod
+    def from_pfractal(cls, size=256, grid=4, t=None, gain=0.5, lacunarity=2.01, octaves=4):
+        pnoise = PerlinNoise()
+        arr = pnoise.fractal2(size, grid, t, gain, lacunarity, octaves)
+        arr = cls._convert(cls, arr)
+        return cls(arr)
+
+    @classmethod
+    def from_sfractal(cls, width=256, height=256, t=None,
+                      gain=0.5, lacunarity=2.01, octaves=4):
+        snoise = SimplexNoise()
+        arr = snoise.fractal2(width, height, t, gain, lacunarity, octaves)
+        arr = cls._convert(cls, arr)
         return cls(arr)
