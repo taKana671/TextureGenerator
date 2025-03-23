@@ -17,7 +17,7 @@ def adjust_noise_amount(img, density=0.5, sharpness=0.1):
         for example, to convert the FBM noise into cloud cover.
         Args:
             arr (numpy.ndarray): noize image
-            density, sharpness (float)
+            density, sharpness (float): less than 1.
     """
 
     img = img - img.min()

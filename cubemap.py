@@ -110,35 +110,35 @@ class CubeMap:
 
             match i:
                 case 0:
-                    stem = 'img_2'  # 'front.png'
+                    stem = 'img_2'  # front
                     bg_img = cloud.create_background(s_color, e_color)
                     cloud_img = cloud.generate_cloud(bg_img)
 
                 case 1:
-                    stem = 'img_0'  # 'right.png'
+                    stem = 'img_0'  # right
                     bg_img = cloud.create_background(s_color, e_color)
                     cloud_img = cloud.generate_cloud(bg_img)
                     cloud_img = np.rot90(cloud_img)
 
                 case 2:
-                    stem = 'img_3'  # 'back.png'
+                    stem = 'img_3'  # back
                     bg_img = cloud.create_background(s_color, e_color)
                     cloud_img = cloud.generate_cloud(bg_img)
                     cloud_img = np.rot90(cloud_img, 2)
 
                 case 3:
-                    stem = 'img_1'  # 'left.png'
+                    stem = 'img_1'  # left
                     bg_img = cloud.create_background(s_color, e_color)
                     cloud_img = cloud.generate_cloud(bg_img)
                     cloud_img = np.rot90(cloud_img, 3)
 
                 case 4:
-                    stem = 'img_4'  # 'top.png'
+                    stem = 'img_4'  # top
                     bg_img = cloud.create_background(s_color)
                     cloud_img = cloud.generate_cloud(bg_img)
 
                 case 5:
-                    stem = 'img_5'  # 'bottom.png'
+                    stem = 'img_5'  # bottom
                     bg_img = cloud.create_background(e_color)
                     cloud_img = cloud.generate_cloud(bg_img)
                     cloud_img = np.rot90(cloud_img, 2)

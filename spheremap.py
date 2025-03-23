@@ -23,13 +23,14 @@ class SphereMap:
         self.r = r
 
     @classmethod
-    def from_sfractal(cls, height=256, r=0.1, gain=0.5, lacunarity=2.011, octaves=4):
+    def from_sfractal(cls, height=256, r=0.1, gain=0.05, lacunarity=2.01, octaves=4):
         simplex = SimplexNoise()
         fract = Fractal(simplex.snoise3, gain, lacunarity, octaves)
-        return cls(fract.fractal, height, r)
+        # return cls(fract.fractal, height, r)
+        return cls(simplex.snoise3, height, r)
 
     def generate_spheremap(self):
-        width = self.height * 2
+        width = self.height  # * 2
         arr = np.zeros((self.height, width, 3), np.float32)
 
         li = random.sample(list('123456789'), 3)
@@ -37,9 +38,14 @@ class SphereMap:
         bb = int(''.join([li[1], li[2], li[0]]))
         cc = int(''.join(li[::-1]))
 
+        # aa = bb = cc = random.uniform(0, 1000)
+        aa = 123
+        bb = 132
+        cc = 312
+
         for j in range(self.height):
             for i in range(width):
-                x = (i + 0.5) / self.height       # // added half a pixel to get the center of the pixel instead of the top-left
+                x = (i + 0.5) / self.height     # // added half a pixel to get the center of the pixel instead of the top-left
                 y = (j + 0.5) / self.height
                 rd_x = x * 2 * np.pi
                 rd_y = y * np.pi
@@ -55,7 +61,17 @@ class SphereMap:
         arr = np.clip(arr * 255, a_min=0, a_max=255).astype(np.uint8)
         # arr = adjust_noise_amount(arr)
         output(arr, 'spehre_map')
+        return arr
         # cv2.imwrite('test4.png', arr)
+
+    def create_skybox_images(self, size=256, intensity=1, sky_color=SkyColor.SKYBLUE):
+        img = self.generate_spheremap()
+        img = self.convert_to_cubemap(img, size)
+        img = adjust_noise_amount(img)
+    
+        
+        # output(img.astype(np.uint8), 'cubemap_from_sphere', )
+        self.generate_images(img, intensity, sky_color)
 
     def rotate(self, x, y, z, roll, pitch, heading):
         roll = roll * np.pi / 180
@@ -155,6 +171,73 @@ class SphereMap:
         img[size * 1:size * 2, size * 3:] = back
         img[:size * 1, size * 1:size * 2] = up
         img[size * 2:, size * 1:size * 2] = bottom
+
+        return img
+
+    def generate_images(self, img, intensity, sky_color):
+        parent = make_dir('cubemap')
+        s_color, e_color = sky_color.rgb_to_bgr()
+
+        h, _ = img.shape[:2]
+        size = int(h / 3)
+
+        for j in range(3):
+            for i in range(4):
+
+                match (j, i):
+                    case (0, 1):
+                        stem = 'img_4'  # 'top.png'
+                        cloud = Cloud(img[:size, size: size * 2, :])
+                        bg_img = cloud.create_background(s_color)
+                        cloud_img = cloud.generate_cloud(bg_img)
+
+                    case (2, 1):
+                        stem = 'img_5'  # 'bottom.png'
+                        cloud = Cloud(img[size * j:, size: size * 2, :])
+                        bg_img = cloud.create_background(e_color)
+                        cloud_img = cloud.generate_cloud(bg_img)
+                        cloud_img = np.rot90(cloud_img, 2)
+
+                    case (1, 0):
+                        stem = 'img_1'  # 'left.png'
+                        cloud = Cloud(img[size: size * 2, :size, :])
+                        bg_img = cloud.create_background(s_color, e_color)
+                        cloud_img = cloud.generate_cloud(bg_img)
+                        cloud_img = np.rot90(cloud_img, 3)
+
+                    case (1, 1):
+                        stem = 'img_2'  # 'front.png'
+                        cloud = Cloud(img[size: size * 2, size * i: size * (i + 1), :])
+                        bg_img = cloud.create_background(s_color, e_color)
+                        cloud_img = cloud.generate_cloud(bg_img)
+
+                    case (1, 2):
+                        stem = 'img_0'  # 'right.png'
+                        cloud = Cloud(img[size: size * 2, size * i: size * (i + 1), :])
+                        bg_img = cloud.create_background(s_color, e_color)
+                        cloud_img = cloud.generate_cloud(bg_img)
+                        cloud_img = np.rot90(cloud_img)
+
+                    case (1, 3):
+                        stem = 'img_3'  # 'back.png'
+                        cloud = Cloud(img[size: size * 2, size * i: size * (i + 1), :])
+                        bg_img = cloud.create_background(s_color, e_color)
+                        cloud_img = cloud.generate_cloud(bg_img)
+                        cloud_img = np.rot90(cloud_img, 2)
+
+                    case _:
+                        continue
+
+                cloud_img = cloud_img.astype(np.uint8)
+                output(cloud_img, stem, parent, with_suffix=False)
+
+
+
+
+
+
+
+
 
 
 def cubemap5():
