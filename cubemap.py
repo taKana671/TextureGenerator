@@ -11,8 +11,10 @@ try:
     from cynoise.fBm import Fractal
 except ImportError:
     from pynoise.simplex import SimplexNoise
-    from pynoise.fBm import Fractal
+    # from pynoise.fBm import Fractal
 
+from cynoise.fBm import Fractal3D as Fractal
+from cynoise.perlin import PerlinNoise
 
 class CubeMap:
     """Create a seamless cubemap noise texture.
@@ -32,6 +34,12 @@ class CubeMap:
     def from_sfractal(cls, size=256, gain=0.5, lacunarity=2.011, octaves=4):
         simplex = SimplexNoise()
         fract = Fractal(simplex.snoise3, gain, lacunarity, octaves)
+        return cls(fract.fractal, size)
+
+    @classmethod
+    def from_pfractal(cls, size=256, gain=0.5, lacunarity=2.011, octaves=4):
+        perlin = PerlinNoise()
+        fract = Fractal(perlin.pnoise3, gain, lacunarity, octaves)
         return cls(fract.fractal, size)
 
     def generate_cubemap(self):
@@ -81,7 +89,7 @@ class CubeMap:
                     cc + noise_pos[j][2]
                 ])
 
-                v = self.noise(p)
+                v = self.noise(*p)   # arrayではなく、x、y、ｚを渡すように修正する！！！
                 arr[y, x + j * self.size] = v
 
         arr = np.clip(arr * 255, a_min=0, a_max=255).astype(np.uint8)

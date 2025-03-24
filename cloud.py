@@ -8,13 +8,14 @@ from output_image import output
 from .utils.noise_processing import round_arr, adjust_noise_amount
 from .utils.color_gradient import get_gradient_3d
 
+from cynoise.perlin import PerlinNoise
 try:
     from cynoise.value import ValueNoise
-    from cynoise.perlin import PerlinNoise
+    # from cynoise.perlin import PerlinNoise
     from cynoise.simplex import SimplexNoise
 except ImportError:
     from pynoise.value import ValueNoise
-    from pynoise.perlin import PerlinNoise
+    # from pynoise.perlin import PerlinNoise
     from pynoise.simplex import SimplexNoise
 
 
