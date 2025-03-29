@@ -8,18 +8,19 @@ from output_image import make_dir, output
 
 try:
     from cynoise.simplex import SimplexNoise
-    from cynoise.fBm import Fractal
+    from cynoise.perlin import PerlinNoise
+    from cynoise.fBm import Fractal3D
 except ImportError:
     from pynoise.simplex import SimplexNoise
-    # from pynoise.fBm import Fractal
+    from pynoise.perlin import PerlinNoise
+    from pynoise.fBm import Fractal3D
 
-from cynoise.fBm import Fractal3D as Fractal
-from cynoise.perlin import PerlinNoise
 
 class CubeMap:
     """Create a seamless cubemap noise texture.
+       Overlay it onto a background image to output skybox images.
         Args:
-            noise_func (callable): a function or method to generate noise.
+            noise_func (callable): method of generating noise.
             size (int): cube size.
     """
 
@@ -31,18 +32,18 @@ class CubeMap:
         self.height = size
 
     @classmethod
-    def from_sfractal(cls, size=256, gain=0.5, lacunarity=2.011, octaves=4):
+    def from_sfractal(cls, size=256, gain=0.5, lacunarity=2.01, octaves=4):
         simplex = SimplexNoise()
-        fract = Fractal(simplex.snoise3, gain, lacunarity, octaves)
+        fract = Fractal3D(simplex.snoise3, gain, lacunarity, octaves)
         return cls(fract.fractal, size)
 
     @classmethod
-    def from_pfractal(cls, size=256, gain=0.5, lacunarity=2.011, octaves=4):
+    def from_pfractal(cls, size=256, gain=0.5, lacunarity=2.01, octaves=4):
         perlin = PerlinNoise()
-        fract = Fractal(perlin.pnoise3, gain, lacunarity, octaves)
+        fract = Fractal3D(perlin.pnoise3, gain, lacunarity, octaves)
         return cls(fract.fractal, size)
 
-    def generate_cubemap(self):
+    def create_cubical_panorama(self):
         """Generate cubemap like below.
 
            front   right  back   left   top    bottom
@@ -83,17 +84,21 @@ class CubeMap:
             ]
 
             for j in range(6):
-                p = np.array([
-                    aa + noise_pos[j][0],
-                    bb + noise_pos[j][1],
-                    cc + noise_pos[j][2]
-                ])
-
-                v = self.noise(*p)   # arrayではなく、x、y、ｚを渡すように修正する！！！
+                _x = aa + noise_pos[j][0]
+                _y = bb + noise_pos[j][1]
+                _z = cc + noise_pos[j][2]
+                v = self.noise(_x, _y, _z)
                 arr[y, x + j * self.size] = v
 
         arr = np.clip(arr * 255, a_min=0, a_max=255).astype(np.uint8)
         return arr
+
+    def create_cubemap(self):
+        img = self.create_cubical_panorama()
+        # output(img, 'org')
+        img = adjust_noise_amount(img)
+        # output(img.astype(np.uint8), 'adjust')
+        return img
 
     def create_skybox_images(self, intensity=1, sky_color=SkyColor.SKYBLUE):
         """Create skybox images.
@@ -101,55 +106,51 @@ class CubeMap:
                 intensity(int): cloud color intensity; minimum = 1
                 sky_color(SkyColor): background color
         """
-        img = self.generate_cubemap()
-        # output(img, 'org')
-        img = adjust_noise_amount(img)
-        # output(img.astype(np.uint8), 'adjust')
-        self.generate_images(img, sky_color, intensity)
+        cubemap = self.create_cubemap()
+        self.generate_images(cubemap, sky_color, intensity)
 
-    def generate_images(self, img, sky_color, intensity=1):
-        parent = make_dir('cubemap')
-        s_color, e_color = sky_color.rgb_to_bgr()
+    def generate_images(self, img, sky_color, intensity):
+        parent = make_dir('skybox')
+        s_bgr, e_bgr = sky_color.rgb_to_bgr()
 
         for i in range(6):
             start = self.size * i
             end = start + self.size
+
             cloud = Cloud(img[:, start: end, :])
+            s_color, e_color = s_bgr, e_bgr
+            k = None
 
             match i:
                 case 0:
-                    stem = 'img_2'  # front
-                    bg_img = cloud.create_background(s_color, e_color)
-                    cloud_img = cloud.generate_cloud(bg_img)
+                    stem = 'img_front'   # img_1
 
                 case 1:
-                    stem = 'img_0'  # right
-                    bg_img = cloud.create_background(s_color, e_color)
-                    cloud_img = cloud.generate_cloud(bg_img)
-                    cloud_img = np.rot90(cloud_img)
+                    stem = 'img_right'   # img_0
+                    k = 1
 
                 case 2:
-                    stem = 'img_3'  # back
-                    bg_img = cloud.create_background(s_color, e_color)
-                    cloud_img = cloud.generate_cloud(bg_img)
-                    cloud_img = np.rot90(cloud_img, 2)
+                    stem = 'img_back'    # img_3
+                    k = 2
 
                 case 3:
-                    stem = 'img_1'  # left
-                    bg_img = cloud.create_background(s_color, e_color)
-                    cloud_img = cloud.generate_cloud(bg_img)
-                    cloud_img = np.rot90(cloud_img, 3)
+                    stem = 'img_left'    # left img_1
+                    k = 3
 
                 case 4:
-                    stem = 'img_4'  # top
-                    bg_img = cloud.create_background(s_color)
-                    cloud_img = cloud.generate_cloud(bg_img)
+                    stem = 'img_top'     # top img_4
+                    e_color = None
 
                 case 5:
-                    stem = 'img_5'  # bottom
-                    bg_img = cloud.create_background(e_color)
-                    cloud_img = cloud.generate_cloud(bg_img)
-                    cloud_img = np.rot90(cloud_img, 2)
+                    stem = 'img_bottom'  # bottom img=5
+                    s_color, e_color = e_color, None
+                    k = 2
+
+            bg_img = cloud.create_background(s_color, e_color)
+            cloud_img = cloud.composite(bg_img, intensity=intensity)
+
+            if k is not None:
+                cloud_img = np.rot90(cloud_img, k)
 
             cloud_img = cloud_img.astype(np.uint8)
             output(cloud_img, stem, parent, with_suffix=False)
