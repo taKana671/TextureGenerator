@@ -1,7 +1,7 @@
 # texture_generator
 
 A submodule repository for [NoiseTexture](https://github.com/taKana671/NoiseTexture)  
-Procedually generate textures images from noise.
+Procedually generate texture images from noise.
 
 # Requirements
 
@@ -14,9 +14,12 @@ Procedually generate textures images from noise.
 * Python 3.12
 * Windows11
 
-# Procedural texture from noise
+# Procedural texture
 Output procedural texture images from noise.  
 For more details of methods and parameters, please see source codes.
+
+1. [Cloud](#cloud)
+2. [Skybox](#skybox)
 
 ## Cloud
 ![Image](https://github.com/user-attachments/assets/017ab598-c65c-4a76-9819-470cd78ca941)
@@ -33,7 +36,7 @@ maker.create_cloud_image()
 
 
 ## Skybox
-The cube map is completely seamless and each skybox image can be connected exactly.  
+The cubemap is completely seamless and each skybox image can be connected exactly.  
 See [skybox](https://github.com/taKana671/skybox).
 
 ![Image](https://github.com/user-attachments/assets/a27a2d3c-4dcd-4275-b952-b5691695d0f2)
