@@ -95,9 +95,9 @@ class CubeMap:
 
     def create_cubemap(self):
         img = self.create_cubical_panorama()
-        # output(img, 'org')
+        output(img, 'org')
         img = adjust_noise_amount(img)
-        # output(img.astype(np.uint8), 'adjust')
+        output(img.astype(np.uint8), 'adjust')
         return img
 
     def create_skybox_images(self, intensity=1, sky_color=SkyColor.SKYBLUE):
@@ -123,7 +123,7 @@ class CubeMap:
 
             match i:
                 case 0:
-                    stem = 'img_front'   # img_1
+                    stem = 'img_front'   # img_2
 
                 case 1:
                     stem = 'img_right'   # img_0
@@ -134,15 +134,15 @@ class CubeMap:
                     k = 2
 
                 case 3:
-                    stem = 'img_left'    # left img_1
+                    stem = 'img_left'    # img_1
                     k = 3
 
                 case 4:
-                    stem = 'img_top'     # top img_4
+                    stem = 'img_top'     # img_4
                     e_color = None
 
                 case 5:
-                    stem = 'img_bottom'  # bottom img=5
+                    stem = 'img_bottom'  # img=5
                     s_color, e_color = e_color, None
                     k = 2
 
