@@ -3,17 +3,6 @@
 A submodule repository for [NoiseTexture](https://github.com/taKana671/NoiseTexture)  
 Procedually generate texture images from noise.
 
-# Requirements
-
-* numpy 2.1.2
-* opencv-contrib-python 4.10.0.84
-* opencv-python 4.10.0.84
-
-# Environment
-
-* Python 3.12
-* Windows11
-
 # Procedural texture
 Output procedural texture images from noise.  
 For more details of methods and parameters, please see source codes.
