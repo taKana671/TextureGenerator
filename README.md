@@ -31,7 +31,7 @@ See [skybox](https://github.com/taKana671/skybox).
 ![Image](https://github.com/user-attachments/assets/a27a2d3c-4dcd-4275-b952-b5691695d0f2)
 
 ```
-from texture_generator.cloud import CubeMap
+from texture_generator.cubemap import CubeMap
 
 maker = CubeMap.from_sfractal()           # using fractal Simplex Noise.
 # maker = CubeMap.from_pfractal()         # using fractal Perlin Noise.
