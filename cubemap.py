@@ -2,7 +2,8 @@ import random
 
 import numpy as np
 
-from .cloud import Cloud, SkyColor
+from .cloud import Cloud
+from .utils.color_gradient import SkyColor
 from .utils.noise_processing import adjust_noise_amount
 from output_image import make_dir, output
 
@@ -10,6 +11,7 @@ try:
     from cynoise.simplex import SimplexNoise
     from cynoise.perlin import PerlinNoise
     from cynoise.fBm import Fractal3D
+    from cynoise.value import ValueNoise
 except ImportError:
     from pynoise.simplex import SimplexNoise
     from pynoise.perlin import PerlinNoise
@@ -30,6 +32,12 @@ class CubeMap:
         self.half_size = int(size / 2)
         self.width = size * 6
         self.height = size
+
+    @classmethod
+    def from_vfractal(cls, size=256, gain=0.5, lacunarity=2.01, octaves=4):
+        value = ValueNoise()
+        fract = Fractal3D(value.vnoise3, gain, lacunarity, octaves)
+        return cls(fract.fractal, size)
 
     @classmethod
     def from_sfractal(cls, size=256, gain=0.5, lacunarity=2.01, octaves=4):
@@ -95,9 +103,9 @@ class CubeMap:
 
     def create_cubemap(self):
         img = self.create_cubical_panorama()
-        output(img, 'org')
+        # output(img, 'org')
         img = adjust_noise_amount(img)
-        output(img.astype(np.uint8), 'adjust')
+        # output(img.astype(np.uint8), 'adjust')
         return img
 
     def create_skybox_images(self, intensity=1, sky_color=SkyColor.SKYBLUE):

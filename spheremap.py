@@ -4,73 +4,77 @@ import cv2
 import numpy as np
 
 from .cloud import Cloud, SkyColor
-from .utils.noise_processing import adjust_noise_amount
+# from .utils.noise_processing import adjust_noise_amount
 from output_image import make_dir, output
 
 try:
     from cynoise.simplex import SimplexNoise
-    from cynoise.fBm import Fractal
+    from cynoise.value import ValueNoise
+    from cynoise.periodic import PeriodicNoise
+    from cynoise.fBm import Fractal3D
 except ImportError:
     from pynoise.simplex import SimplexNoise
-    from pynoise.fBm import Fractal
+    from pynoise.fBm import Fractal3D
 
 
 class SphereMap:
 
-    def __init__(self, noise_func, height, r):
+    def __init__(self, noise_func, size, r):
         self.noise = noise_func
-        self.height = height
+        self.size = size
         self.r = r
 
     @classmethod
-    def from_sfractal(cls, height=256, r=0.1, gain=0.05, lacunarity=2.01, octaves=4):
+    def from_sfractal(cls, height=256, r=0.1, gain=0.5, lacunarity=2.01, octaves=8):
         simplex = SimplexNoise()
-        fract = Fractal(simplex.snoise3, gain, lacunarity, octaves)
-        # return cls(fract.fractal, height, r)
-        return cls(simplex.snoise3, height, r)
+        fract = Fractal3D(simplex.snoise3, gain, lacunarity, octaves)
+        return cls(fract.fractal, height, r)
 
-    def generate_spheremap(self):
-        width = self.height  # * 2
-        arr = np.zeros((self.height, width, 3), np.float32)
+    def create_spherical_map(self):
+        # width = self.size
+        arr = np.zeros((self.size, self.size, 3), np.float32)
 
         li = random.sample(list('123456789'), 3)
         aa = int(''.join(li))
         bb = int(''.join([li[1], li[2], li[0]]))
         cc = int(''.join(li[::-1]))
 
-        # aa = bb = cc = random.uniform(0, 1000)
-        aa = 123
-        bb = 132
-        cc = 312
-
-        for j in range(self.height):
-            for i in range(width):
-                x = (i + 0.5) / self.height     # // added half a pixel to get the center of the pixel instead of the top-left
-                y = (j + 0.5) / self.height
+        for j in range(self.size):
+            for i in range(self.size):
+                x = (i + 0.5) / self.size     # // added half a pixel to get the center of the pixel instead of the top-left
+                y = (j + 0.5) / self.size
                 rd_x = x * 2 * np.pi
                 rd_y = y * np.pi
                 y_sin = np.sin(rd_y + np.pi)
-                a = self.r * np.sin(rd_x) * y_sin
-                b = self.r * np.cos(rd_x) * y_sin
-                c = self.r * np.cos(rd_y)
+                a = aa + self.r * np.sin(rd_x) * y_sin
+                b = bb + self.r * np.cos(rd_x) * y_sin
+                c = cc + self.r * np.cos(rd_y)
 
-                v = self.noise(np.array([a + aa, b + bb, c + cc]) * 10)
+                v = self.noise(a * 10, b * 10, c * 10)
                 arr[j, i] = v
 
-        # arr = np.array(arr).reshape(256, 512)
         arr = np.clip(arr * 255, a_min=0, a_max=255).astype(np.uint8)
-        # arr = adjust_noise_amount(arr)
-        output(arr, 'spehre_map')
         return arr
-        # cv2.imwrite('test4.png', arr)
+
+    def create_skysphere(self):
+        img = self.create_spherical_map()
+        output(img, 'org')
+        cloud = Cloud(img)
+        s_bgr, _ = SkyColor.SKYBLUE.rgb_to_bgr()
+        bg_img = cloud.create_background(s_bgr, None)
+        cloud_img = cloud.composite(bg_img, intensity=1)
+        output(cloud_img.astype(np.uint8), 'skysphere')
+
+    def create_cubemap(self):
+        img = self.create_spherical_map()
+        output(img, 'org')
+        img = self.convert_equirectangular_to_cube(img)
+        output(img.astype(np.uint8), 'converted')
+        return img
 
     def create_skybox_images(self, size=256, intensity=1, sky_color=SkyColor.SKYBLUE):
-        img = self.generate_spheremap()
-        img = self.convert_to_cubemap(img, size)
-        img = adjust_noise_amount(img)
-    
-        
-        # output(img.astype(np.uint8), 'cubemap_from_sphere', )
+        img = self.create_cubemap()
+        output(img.astype(np.uint8), 'cubemap_from_sphere')
         self.generate_images(img, intensity, sky_color)
 
     def rotate(self, x, y, z, roll, pitch, heading):
@@ -137,8 +141,8 @@ class SphereMap:
 
         return cv2.remap(img, theta, phi, cv2.INTER_CUBIC, borderMode=cv2.BORDER_WRAP)
 
-    def convert_to_cubemap(self, spheremap, size):
-        x, y, z = self.create_coords_group(size)
+    def convert_equirectangular_to_cube(self, spheremap):
+        x, y, z = self.create_coords_group(self.size)
 
         phi, theta = self.convert_equirectangular(x, y, z)
         front = self.remap_equirectangular(spheremap, phi, theta)
@@ -163,14 +167,14 @@ class SphereMap:
         phi, theta = self.convert_equirectangular(rx, ry, rz)
         up = self.remap_equirectangular(spheremap, phi, theta)
 
-        img = np.zeros((size * 3, size * 4, 3), dtype=spheremap.dtype)
+        img = np.zeros((self.size * 3, self.size * 4, 3), dtype=spheremap.dtype)
 
-        img[size * 1:size * 2, :size * 1] = left
-        img[size * 1:size * 2, size * 1:size * 2] = front
-        img[size * 1:size * 2, size * 2:size * 3] = right
-        img[size * 1:size * 2, size * 3:] = back
-        img[:size * 1, size * 1:size * 2] = up
-        img[size * 2:, size * 1:size * 2] = bottom
+        img[self.size * 1:self.size * 2, :self.size * 1] = left
+        img[self.size * 1:self.size * 2, self.size * 1:self.size * 2] = front
+        img[self.size * 1:self.size * 2, self.size * 2:self.size * 3] = right
+        img[self.size * 1:self.size * 2, self.size * 3:] = back
+        img[:self.size * 1, self.size * 1:self.size * 2] = up
+        img[self.size * 2:, self.size * 1:self.size * 2] = bottom
 
         return img
 
