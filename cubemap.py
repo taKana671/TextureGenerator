@@ -51,7 +51,7 @@ class CubeMap:
         fract = Fractal3D(perlin.pnoise3, gain, lacunarity, octaves)
         return cls(fract.fractal, size)
 
-    def create_cubical_panorama(self):
+    def create_cubemap(self):
         """Generate cubemap like below.
 
            front   right  back   left   top    bottom
@@ -101,21 +101,17 @@ class CubeMap:
         arr = np.clip(arr * 255, a_min=0, a_max=255).astype(np.uint8)
         return arr
 
-    def create_cubemap(self):
-        img = self.create_cubical_panorama()
-        # output(img, 'org')
-        img = adjust_noise_amount(img)
-        # output(img.astype(np.uint8), 'adjust')
-        return img
-
     def create_skybox_images(self, intensity=1, sky_color=SkyColor.SKYBLUE):
         """Create skybox images.
             Args:
                 intensity(int): cloud color intensity; minimum = 1
                 sky_color(SkyColor): background color
         """
-        cubemap = self.create_cubemap()
-        self.generate_images(cubemap, sky_color, intensity)
+        img = self.create_cubemap()
+        # output(img, 'org')
+        img = adjust_noise_amount(img)
+        # output(img.astype(np.uint8), 'adjust')
+        self.generate_images(img, sky_color, intensity)
 
     def generate_images(self, img, sky_color, intensity):
         parent = make_dir('skybox')

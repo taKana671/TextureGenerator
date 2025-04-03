@@ -8,13 +8,11 @@ from .utils.color_gradient import SkyColor
 from output_image import make_dir, output
 
 try:
-    from cynoise.simplex import SimplexNoise
-    from cynoise.value import ValueNoise
-    from cynoise.periodic import PeriodicNoise
     from cynoise.fBm import Fractal3D
+    from cynoise.simplex import SimplexNoise
 except ImportError:
-    from pynoise.simplex import SimplexNoise
     from pynoise.fBm import Fractal3D
+    from pynoise.simplex import SimplexNoise
 
 
 class SphereMap:
@@ -25,10 +23,10 @@ class SphereMap:
         self.r = r
 
     @classmethod
-    def from_sfractal(cls, height=256, r=0.1, gain=0.5, lacunarity=2.01, octaves=8):
+    def from_sfractal(cls, size=256, r=0.1, gain=0.5, lacunarity=2.01, octaves=10):
         simplex = SimplexNoise()
         fract = Fractal3D(simplex.snoise3, gain, lacunarity, octaves)
-        return cls(fract.fractal, height, r)
+        return cls(fract.fractal, size, r)
 
     def create_spheremap(self):
         arr = np.zeros((self.size, self.size, 3), np.float32)
@@ -45,10 +43,10 @@ class SphereMap:
                 rd_x = x * 2 * np.pi
                 rd_y = y * np.pi
                 y_sin = np.sin(rd_y + np.pi)
+
                 a = aa + self.r * np.sin(rd_x) * y_sin
                 b = bb + self.r * np.cos(rd_x) * y_sin
                 c = cc + self.r * np.cos(rd_y)
-
                 v = self.noise(a * 10, b * 10, c * 10)
                 arr[j, i] = v
 
@@ -59,7 +57,6 @@ class SphereMap:
         img = self.create_spheremap()
         # output(img, 'org')
         cloud = Cloud(img)
-
         s_bgr, _ = SkyColor.SKYBLUE.rgb_to_bgr()
         bg_img = cloud.create_background(s_bgr, None)
         cloud_img = cloud.composite(bg_img, intensity=1)
@@ -191,30 +188,30 @@ class SphereMap:
 
                 match (j, i):
                     case (0, 1):
-                        stem = 'img_4'  # 'top.png'
+                        stem = 'img_top'     # img_4
                         arr = img[:size, size: size * 2, :]
 
                     case (2, 1):
-                        stem = 'img_5'  # 'bottom.png'
+                        stem = 'img_bottom'  # img_5
                         arr = img[size * j:, size: size * 2, :]
                         k = 2
 
                     case (1, 0):
-                        stem = 'img_1'  # 'left.png'
+                        stem = 'img_left'    # img_1
                         arr = img[size: size * 2, :size, :]
                         k = 3
 
                     case (1, 1):
-                        stem = 'img_2'  # 'front.png'
+                        stem = 'img_front'   # img_2
                         arr = img[size: size * 2, size * i: size * (i + 1), :]
 
                     case (1, 2):
-                        stem = 'img_0'  # 'right.png'
+                        stem = 'img_right'   # img_0
                         arr = img[size: size * 2, size * i: size * (i + 1), :]
                         k = 1
 
                     case (1, 3):
-                        stem = 'img_3'  # 'back.png'
+                        stem = 'img_back'    # img_3
                         arr = img[size: size * 2, size * i: size * (i + 1), :]
                         k = 2
 
@@ -223,7 +220,7 @@ class SphereMap:
 
                 cloud = Cloud(arr)
                 bg_img = cloud.create_background(s_bgr, None)
-                cloud_img = cloud.composite(bg_img)
+                cloud_img = cloud.composite(bg_img, intensity=intensity)
 
                 if k is not None:
                     cloud_img = np.rot90(cloud_img, k)
