@@ -2,7 +2,8 @@ import random
 
 import numpy as np
 
-from .cloud import Cloud, SkyColor
+from .cloud import Cloud
+from .utils.color_gradient import SkyColor
 from .utils.noise_processing import adjust_noise_amount
 from output_image import make_dir, output
 
@@ -10,6 +11,7 @@ try:
     from cynoise.simplex import SimplexNoise
     from cynoise.perlin import PerlinNoise
     from cynoise.fBm import Fractal3D
+    from cynoise.value import ValueNoise
 except ImportError:
     from pynoise.simplex import SimplexNoise
     from pynoise.perlin import PerlinNoise
@@ -32,6 +34,12 @@ class CubeMap:
         self.height = size
 
     @classmethod
+    def from_vfractal(cls, size=256, gain=0.5, lacunarity=2.01, octaves=4):
+        value = ValueNoise()
+        fract = Fractal3D(value.vnoise3, gain, lacunarity, octaves)
+        return cls(fract.fractal, size)
+
+    @classmethod
     def from_sfractal(cls, size=256, gain=0.5, lacunarity=2.01, octaves=4):
         simplex = SimplexNoise()
         fract = Fractal3D(simplex.snoise3, gain, lacunarity, octaves)
@@ -43,7 +51,7 @@ class CubeMap:
         fract = Fractal3D(perlin.pnoise3, gain, lacunarity, octaves)
         return cls(fract.fractal, size)
 
-    def create_cubical_panorama(self):
+    def create_cubemap(self):
         """Generate cubemap like below.
 
            front   right  back   left   top    bottom
@@ -93,21 +101,17 @@ class CubeMap:
         arr = np.clip(arr * 255, a_min=0, a_max=255).astype(np.uint8)
         return arr
 
-    def create_cubemap(self):
-        img = self.create_cubical_panorama()
-        output(img, 'org')
-        img = adjust_noise_amount(img)
-        output(img.astype(np.uint8), 'adjust')
-        return img
-
     def create_skybox_images(self, intensity=1, sky_color=SkyColor.SKYBLUE):
         """Create skybox images.
             Args:
                 intensity(int): cloud color intensity; minimum = 1
                 sky_color(SkyColor): background color
         """
-        cubemap = self.create_cubemap()
-        self.generate_images(cubemap, sky_color, intensity)
+        img = self.create_cubemap()
+        # output(img, 'org')
+        img = adjust_noise_amount(img)
+        # output(img.astype(np.uint8), 'adjust')
+        self.generate_images(img, sky_color, intensity)
 
     def generate_images(self, img, sky_color, intensity):
         parent = make_dir('skybox')
