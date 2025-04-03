@@ -3,8 +3,8 @@ import random
 import cv2
 import numpy as np
 
-from .cloud import Cloud, SkyColor
-# from .utils.noise_processing import adjust_noise_amount
+from .cloud import Cloud
+from .utils.color_gradient import SkyColor
 from output_image import make_dir, output
 
 try:
@@ -30,8 +30,7 @@ class SphereMap:
         fract = Fractal3D(simplex.snoise3, gain, lacunarity, octaves)
         return cls(fract.fractal, height, r)
 
-    def create_spherical_map(self):
-        # width = self.size
+    def create_spheremap(self):
         arr = np.zeros((self.size, self.size, 3), np.float32)
 
         li = random.sample(list('123456789'), 3)
@@ -56,25 +55,26 @@ class SphereMap:
         arr = np.clip(arr * 255, a_min=0, a_max=255).astype(np.uint8)
         return arr
 
-    def create_skysphere(self):
-        img = self.create_spherical_map()
-        output(img, 'org')
+    def create_skysphere_image(self):
+        img = self.create_spheremap()
+        # output(img, 'org')
         cloud = Cloud(img)
+
         s_bgr, _ = SkyColor.SKYBLUE.rgb_to_bgr()
         bg_img = cloud.create_background(s_bgr, None)
         cloud_img = cloud.composite(bg_img, intensity=1)
         output(cloud_img.astype(np.uint8), 'skysphere')
 
     def create_cubemap(self):
-        img = self.create_spherical_map()
-        output(img, 'org')
-        img = self.convert_equirectangular_to_cube(img)
-        output(img.astype(np.uint8), 'converted')
+        img = self.create_spheremap()
+        # output(img, 'org')
+        img = self.convert_sphere_to_cube(img)
+        # output(img, 'converted')
         return img
 
     def create_skybox_images(self, size=256, intensity=1, sky_color=SkyColor.SKYBLUE):
         img = self.create_cubemap()
-        output(img.astype(np.uint8), 'cubemap_from_sphere')
+        # output(img, 'skybox')
         self.generate_images(img, intensity, sky_color)
 
     def rotate(self, x, y, z, roll, pitch, heading):
@@ -141,7 +141,7 @@ class SphereMap:
 
         return cv2.remap(img, theta, phi, cv2.INTER_CUBIC, borderMode=cv2.BORDER_WRAP)
 
-    def convert_equirectangular_to_cube(self, spheremap):
+    def convert_sphere_to_cube(self, spheremap):
         x, y, z = self.create_coords_group(self.size)
 
         phi, theta = self.convert_equirectangular(x, y, z)
@@ -179,99 +179,53 @@ class SphereMap:
         return img
 
     def generate_images(self, img, intensity, sky_color):
-        parent = make_dir('cubemap')
-        s_color, e_color = sky_color.rgb_to_bgr()
+        parent = make_dir('skybox')
+        s_bgr, _ = sky_color.rgb_to_bgr()
 
         h, _ = img.shape[:2]
         size = int(h / 3)
 
         for j in range(3):
             for i in range(4):
+                k = None
 
                 match (j, i):
                     case (0, 1):
                         stem = 'img_4'  # 'top.png'
-                        cloud = Cloud(img[:size, size: size * 2, :])
-                        bg_img = cloud.create_background(s_color)
-                        cloud_img = cloud.generate_cloud(bg_img)
+                        arr = img[:size, size: size * 2, :]
 
                     case (2, 1):
                         stem = 'img_5'  # 'bottom.png'
-                        cloud = Cloud(img[size * j:, size: size * 2, :])
-                        bg_img = cloud.create_background(e_color)
-                        cloud_img = cloud.generate_cloud(bg_img)
-                        cloud_img = np.rot90(cloud_img, 2)
+                        arr = img[size * j:, size: size * 2, :]
+                        k = 2
 
                     case (1, 0):
                         stem = 'img_1'  # 'left.png'
-                        cloud = Cloud(img[size: size * 2, :size, :])
-                        bg_img = cloud.create_background(s_color, e_color)
-                        cloud_img = cloud.generate_cloud(bg_img)
-                        cloud_img = np.rot90(cloud_img, 3)
+                        arr = img[size: size * 2, :size, :]
+                        k = 3
 
                     case (1, 1):
                         stem = 'img_2'  # 'front.png'
-                        cloud = Cloud(img[size: size * 2, size * i: size * (i + 1), :])
-                        bg_img = cloud.create_background(s_color, e_color)
-                        cloud_img = cloud.generate_cloud(bg_img)
+                        arr = img[size: size * 2, size * i: size * (i + 1), :]
 
                     case (1, 2):
                         stem = 'img_0'  # 'right.png'
-                        cloud = Cloud(img[size: size * 2, size * i: size * (i + 1), :])
-                        bg_img = cloud.create_background(s_color, e_color)
-                        cloud_img = cloud.generate_cloud(bg_img)
-                        cloud_img = np.rot90(cloud_img)
+                        arr = img[size: size * 2, size * i: size * (i + 1), :]
+                        k = 1
 
                     case (1, 3):
                         stem = 'img_3'  # 'back.png'
-                        cloud = Cloud(img[size: size * 2, size * i: size * (i + 1), :])
-                        bg_img = cloud.create_background(s_color, e_color)
-                        cloud_img = cloud.generate_cloud(bg_img)
-                        cloud_img = np.rot90(cloud_img, 2)
+                        arr = img[size: size * 2, size * i: size * (i + 1), :]
+                        k = 2
 
                     case _:
                         continue
 
-                cloud_img = cloud_img.astype(np.uint8)
-                output(cloud_img, stem, parent, with_suffix=False)
+                cloud = Cloud(arr)
+                bg_img = cloud.create_background(s_bgr, None)
+                cloud_img = cloud.composite(bg_img)
 
+                if k is not None:
+                    cloud_img = np.rot90(cloud_img, k)
 
-
-
-
-
-
-
-
-
-def cubemap5():
-    # noise_maker = SimplexNoise()
-    simplex = SimplexNoise()
-    noise = Fractal(simplex.snoise3)
-    size = 256
-    r = 0.05
-    arr = []
-
-    for y in range(256):
-        for x in range(512):
-            fx = (x + 0.5) / 512
-            fy = (y + 0.5) / size
-            frdx = fx * 2 * np.pi
-            frdy = fy * np.pi
-            fy_sin = np.sin(frdy + np.pi)
-            a = r * np.sin(frdx) * fy_sin
-            b = r * np.cos(frdx) * fy_sin
-            c = r * np.cos(frdy)
-
-            v = noise.fractal(np.array([a + 123, b + 132, c + 312]) * 10)
-            # v = noise_maker.snoise3(np.array([a + 123, b + 132, c + 312]) * 10)
-            arr.append(v)
-
-    arr = np.array(arr).reshape(256, 512)
-    arr = np.clip(arr * 255, a_min=0, a_max=255).astype(np.uint8)
-    # arr = adjust_noise_amount(arr)
-    output(arr, 'spehre_map')
-    # cv2.imwrite('test4.png', arr)
-
-
-
+                output(cloud_img.astype(np.uint8), stem, parent, with_suffix=False)
