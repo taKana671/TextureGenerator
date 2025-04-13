@@ -16,6 +16,7 @@ except ImportError:
     from pynoise.simplex import SimplexNoise
     from pynoise.perlin import PerlinNoise
     from pynoise.fBm import Fractal3D
+    from pynoise.value import ValueNoise
 
 
 class CubeMap:
