@@ -1,6 +1,9 @@
 # TextureGenerator
 
 Procedually generate texture images from noise.
+The `noise` directory of this repository contains two submodules, `cynoise` and `pynoise`. `cynoise` has Cython source code and must be built by setup.py to use.
+If it has been build, the fast Cython code is used, if not python code is used.  
+See [NoiseTexture](https://github.com/taKana671/NoiseTexture/tree/main) for the difference in speed.
 
 # Requirements
 
