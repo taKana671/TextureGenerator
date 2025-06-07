@@ -1,0 +1,6 @@
+[submodule "noise/cynoise"]
+	path = noise/cynoise
+	url = https://github.com/taKana671/cynoise.git
+[submodule "noise/pynoise"]
+	path = noise/pynoise
+	url = https://github.com/taKana671/pynoise.git
