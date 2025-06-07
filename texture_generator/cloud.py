@@ -3,18 +3,13 @@ import copy
 import cv2
 import numpy as np
 
-from output_image import output
-from .utils.noise_processing import round_arr, adjust_noise_amount
-from .utils.color_gradient import get_gradient_3d, SkyColor
+from utils.output_image import output
+from utils.noise_processing import round_arr, adjust_noise_amount
+from utils.color_gradient import get_gradient_3d, SkyColor
 
-try:
-    from cynoise.value import ValueNoise
-    from cynoise.perlin import PerlinNoise
-    from cynoise.simplex import SimplexNoise
-except ImportError:
-    from pynoise.value import ValueNoise
-    from pynoise.perlin import PerlinNoise
-    from pynoise.simplex import SimplexNoise
+from noise import ValueNoise
+from noise import PerlinNoise
+from noise import SimplexNoise
 
 
 class Cloud:

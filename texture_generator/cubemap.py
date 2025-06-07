@@ -3,20 +3,15 @@ import random
 import numpy as np
 
 from .cloud import Cloud
-from .utils.color_gradient import SkyColor
-from .utils.noise_processing import adjust_noise_amount
-from output_image import make_dir, output
+from utils.color_gradient import SkyColor
+from utils.noise_processing import adjust_noise_amount
+from utils.output_image import make_dir, output
 
-try:
-    from cynoise.simplex import SimplexNoise
-    from cynoise.perlin import PerlinNoise
-    from cynoise.fBm import Fractal3D
-    from cynoise.value import ValueNoise
-except ImportError:
-    from pynoise.simplex import SimplexNoise
-    from pynoise.perlin import PerlinNoise
-    from pynoise.fBm import Fractal3D
-    from pynoise.value import ValueNoise
+
+from noise import SimplexNoise
+from noise import PerlinNoise
+from noise import Fractal3D
+from noise import ValueNoise
 
 
 class CubeMap:

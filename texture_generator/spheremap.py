@@ -4,15 +4,10 @@ import cv2
 import numpy as np
 
 from .cloud import Cloud
-from .utils.color_gradient import SkyColor
-from output_image import make_dir, output
-
-try:
-    from cynoise.fBm import Fractal3D
-    from cynoise.simplex import SimplexNoise
-except ImportError:
-    from pynoise.fBm import Fractal3D
-    from pynoise.simplex import SimplexNoise
+from utils.color_gradient import SkyColor
+from utils.output_image import make_dir, output
+from noise import Fractal3D
+from noise import SimplexNoise
 
 
 class SphereMap:
