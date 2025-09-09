@@ -7,21 +7,32 @@ from utils import output_image
 
 
 class IslandHeightmap:
+    """A class to generate an island heightmap.
+        Args:
+            noise (function):
+            size (int): The size of an image.
+            island_center_h (int): y-axis center of an island; must be positive; size // 2, if not specified.
+            island_center_w (int): x-axis center of an island; must be positive; size // 2, if not specified.
+            island_size (float): The larger the island_size, the smaller the island become.
+            reverse (bool): If False, basin-shaped heightmap is generated.
+    """
 
     def __init__(self, noise, size=256, island_center_h=None,
-                 island_center_w=None, island_size=2):
+                 island_center_w=None, island_size=2, reverse=False):
         self.noise = noise
         self.size = size
+        inner_to_outer = not reverse
         self.mask = RadialGradientMask(
-            size, size, island_center_h, island_center_w, island_size
+            size, size, island_center_h, island_center_w, island_size, inner_to_outer
         )
 
     @classmethod
     def from_sfractal(cls, size=256, gain=0.5, lacunarity=2.01, octaves=4,
-                      island_center_h=None, island_center_w=None, island_size=2):
+                      island_center_h=None, island_center_w=None, island_size=2, reverse=False):
         simplex = SimplexNoise()
         noise = Fractal2D(simplex.snoise2, gain, lacunarity, octaves)
-        return cls(noise.fractal, size, island_center_h, island_center_w, island_size)
+
+        return cls(noise.fractal, size, island_center_h, island_center_w, island_size, reverse)
 
     def get_height(self, x, y, t):
         noise_v = self.noise(x / self.size + t, y / self.size + t)
@@ -29,9 +40,19 @@ class IslandHeightmap:
         v = 0 if mask_v >= noise_v else noise_v - mask_v
         return v
 
-    def create_island_heightmap(self, t=None):
+    def create_island_heightmap(self, island_center_h=None, island_center_w=None,
+                                island_size=None, t=None):
         if t is None:
             t = random.uniform(0, 1000)
+
+        if island_center_h is not None:
+            self.mask.center_h = island_center_h
+
+        if island_center_w is not None:
+            self.mask.center_w = island_center_w
+
+        if island_size is not None:
+            self.mask.gradient_size = island_size
 
         arr = np.array(
             [self.get_height(x, y, t)
