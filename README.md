@@ -41,6 +41,7 @@ For more details of methods and parameters, please see source codes.
 1. [Cloud](#cloud)
 2. [Cubemap](#cubemap)
 3. [Sphere map](#sphere-map)
+4. [Island heightmap](#island-heightmap)
 
 ## Cloud
 ![Image](https://github.com/user-attachments/assets/017ab598-c65c-4a76-9819-470cd78ca941)
@@ -118,3 +119,16 @@ output(img, 'cubemap')
 # output skybox images composited with a background image.
 maker.create_skybox_images()
 ```
+
+## Island heightmap
+
+![Image](https://github.com/user-attachments/assets/9335cf76-c91f-497a-9f2f-f94c99ceefb1)
+
+```
+from heightmap_generator.island_heightmap import IslandHeightmap
+
+maker = IslandHeightmap.from_sfractal()
+# maker = IslandHeightmap.from_sfractal(reverse=True)  # basin-shaped heightmap
+maker.create_island_heightmap()
+```
+
