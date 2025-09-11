@@ -5,7 +5,8 @@ import numpy as np
 
 from utils.output_image import output
 from utils.noise_processing import round_arr, adjust_noise_amount
-from utils.color_gradient import get_gradient_3d, SkyColor
+from utils.color_gradient import SkyColor  # get_gradient_3d
+from mask.linear_gradient_generator import LinearGradient
 
 from noise import ValueNoise
 from noise import PerlinNoise
@@ -128,8 +129,9 @@ class Cloud:
         if end_color is None:
             bg_img = np.full((self.height, self.width, 3), start_color, np.uint8)
         else:
-            bg_img = get_gradient_3d(
-                self.width, self.height, start_color, end_color, (False, False, False))
+            vertical_grad = LinearGradient(
+                self.height, self.width, start_color, end_color, (False, False, False))
+            bg_img = vertical_grad.get_gradient_3d()
 
         return bg_img
 
