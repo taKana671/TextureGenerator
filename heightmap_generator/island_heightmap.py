@@ -41,7 +41,7 @@ class IslandHeightmap:
         return v
 
     def create_island_heightmap(self, island_center_h=None, island_center_w=None,
-                                island_size=None, t=None):
+                                island_size=None, t=None, parent='.', with_suffix=True):
         if t is None:
             t = random.uniform(0, 1000)
 
@@ -61,4 +61,4 @@ class IslandHeightmap:
 
         arr = arr.reshape(self.size, self.size)
         arr = np.clip(arr * 255, a_min=0, a_max=255).astype(np.uint8)
-        output_image.output(arr, 'island_heightmap')
+        output_image.output(arr, 'island_heightmap', parent, with_suffix)

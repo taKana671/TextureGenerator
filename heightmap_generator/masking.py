@@ -44,21 +44,23 @@ class Masking:
         return img
 
     @staticmethod
-    def fractal_simplex_noise(mask, size=256, t=None, gain=0.5, lacunarity=2.01, octaves=4):
+    def fractal_simplex_noise(mask, size=256, t=None, gain=0.5, lacunarity=2.01, octaves=4,
+                              parent='.', with_suffix=True):
         simplex = SimplexNoise()
         noise_img = simplex.fractal2(size, size, t, gain, lacunarity, octaves)
         # noise_img = np.stack([noise_img] * 3, axis=-1)
 
         img = Masking.composite(noise_img, mask)
         img = np.clip(img * 255, a_min=0, a_max=255).astype(np.uint8)
-        output_image.output(img, 'masked_image')
+        output_image.output(img, 'masked_image', parent, with_suffix)
 
     @staticmethod
-    def fractal_perlin_noise(mask, size=256, grid=4, t=None, gain=0.5, lacunarity=2.01, octaves=4):
+    def fractal_perlin_noise(mask, size=256, grid=4, t=None, gain=0.5, lacunarity=2.01, octaves=4,
+                             parent='.', with_suffix=True):
         perlin = PerlinNoise()
         noise_img = perlin.fractal2(size, grid, t, gain, lacunarity, octaves)
         # noise_img = np.stack([noise_img] * 3, axis=-1)
 
         img = Masking.composite(noise_img, mask)
         img = np.clip(img * 255, a_min=0, a_max=255).astype(np.uint8)
-        output_image.output(img, 'masked_image')
+        output_image.output(img, 'masked_image', parent, with_suffix)
