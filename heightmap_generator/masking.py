@@ -48,7 +48,7 @@ class Masking:
         simplex = SimplexNoise()
         noise_img = simplex.fractal2(size, size, t, gain, lacunarity, octaves)
         # noise_img = np.stack([noise_img] * 3, axis=-1)
-        import pdb; pdb.set_trace()
+
         img = Masking.composite(noise_img, mask)
         img = np.clip(img * 255, a_min=0, a_max=255).astype(np.uint8)
         output_image.output(img, 'masked_image')
