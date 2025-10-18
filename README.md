@@ -87,6 +87,10 @@ maker.create_skybox_images()
 
 ## Sphere map
 
+### _An image for Sphere sky_
+
+Applying this image as a texture to a sphere creates a spherical sky.
+
 ![Image](https://github.com/user-attachments/assets/6de22ecc-8759-4fee-b9dc-5759e5c29729)
 
 ```
@@ -104,11 +108,15 @@ output(img, 'spheremap')
 maker.create_skysphere_image()
 ```
 
+### _6 images for Sky box_
+
+Create a sphere and use a 3D cube map to seamlessly wrap six images around its surface, creating a full-surround background.
+
 ![Image](https://github.com/user-attachments/assets/5dd59dc1-7c0b-45f4-a804-fccaa6cabe6d)
 
 ```
 from texture_generator.spheremap import SphereMap
-from output_image import output
+from utils.output_image import output
 
 # using fractal Simplex Noise.
 maker = SphereMap.from_sfractal()
