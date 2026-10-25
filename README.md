@@ -48,7 +48,7 @@ For more details of methods and parameters, please see source codes.
 ![Image](https://github.com/user-attachments/assets/017ab598-c65c-4a76-9819-470cd78ca941)
 
 ```
-from texture_generator.cloud import Cloud
+from texture_generator.texture_generator import Cloud
 
 maker = Cloud.from_vfractal()             # using fractal Value Noise.
 
@@ -69,8 +69,8 @@ See [skybox](https://github.com/taKana671/skybox).
 ![Image](https://github.com/user-attachments/assets/a27a2d3c-4dcd-4275-b952-b5691695d0f2)
 
 ```
-from texture_generator.cubemap import CubeMap
-from utils.output_image import output
+from texture_generator.texture_generator import CubeMap
+from texture_generator.utils.output_image import output
 
 maker = CubeMap.from_sfractal()           # using fractal Simplex Noise.
 
@@ -94,8 +94,8 @@ Applying this image as a texture to a sphere creates a spherical sky.
 ![Image](https://github.com/user-attachments/assets/6de22ecc-8759-4fee-b9dc-5759e5c29729)
 
 ```
-from texture_generator.spheremap import SphereMap
-from utils.output_image import output
+from texture_generator.texture_generator import SphereMap
+from texture_generator.utils.output_image import output
 
 # using fractal Simplex Noise.
 maker = SphereMap.from_sfractal()
@@ -115,8 +115,8 @@ Create a sphere and use a 3D cube map to seamlessly wrap six images around its s
 ![Image](https://github.com/user-attachments/assets/5dd59dc1-7c0b-45f4-a804-fccaa6cabe6d)
 
 ```
-from texture_generator.spheremap import SphereMap
-from utils.output_image import output
+from texture_generator.texture_generator import SphereMap
+from texture_generator.utils.output_image import output
 
 # using fractal Simplex Noise.
 maker = SphereMap.from_sfractal()
@@ -134,7 +134,7 @@ maker.create_skybox_images()
 ![Image](https://github.com/user-attachments/assets/74f43288-9f68-4a77-a608-23a0b1daba4b)
 
 ```
-from heightmap_generator.island_heightmap import IslandHeightmap
+from texture_generator.heightmap_generator import IslandHeightmap
 
 maker = IslandHeightmap.from_sfractal()
 # maker = IslandHeightmap.from_sfractal(reverse=True)  # basin-shaped heightmap
